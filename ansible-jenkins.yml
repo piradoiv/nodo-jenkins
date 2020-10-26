@@ -1,0 +1,36 @@
+---
+- hosts: all
+
+  tasks:
+    - name: Instalar todos los paquetes comunes de un agente de Jenkins
+      become: yes
+      package:
+        name: "{{ item }}"
+        state: present
+        update_cache: yes
+      with_list:
+        - openjdk-11-jre
+        - docker.io
+        - git
+
+    - name: Asegura que el ejecutable del agente esté en el nodo
+      copy:
+        src: ./agent.jar
+        dest: /home/vagrant/agent.jar
+
+    - name: Genera el comando para lanzar el agente de Jenkins
+      template:
+        src: templates/arranca-agente.sh.j2
+        dest: /home/vagrant/arranca-agente.sh
+
+    - name: Habilita permisos de ejecución en el script de arranque del nodo
+      file:
+        path: /home/vagrant/arranca-agente.sh
+        mode: "755"
+
+    - name: Añade al usuario de vagrant al grupo de ejecución de docker
+      become: yes
+      user:
+        name: vagrant
+        groups: docker
+        append: yes
